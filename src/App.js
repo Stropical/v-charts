@@ -3,46 +3,61 @@ import './App.css';
 import Layout from './Layout';
 import { useRef, useEffect, useState, createContext } from 'react';
 import { init, dispose, Chart, registerOverlay } from 'klinecharts'
-import axios from 'axios'
+
+import socketIO from 'socket.io-client';
+const socket = socketIO.connect('http://localhost:5757');
 
 const URL = 'http://172.178.57.112:5656'
 
 const H1 = "#a3f598"
 const H2 = "#e67c7c"
 
-const get_data = () => {
-  return new Promise(resolve => {
-    axios.get(URL + '/chart-data').then((res) => {
-      //console.log(res)
-      if(res.data) {
-        resolve(res.data)
-      } else {
-        resolve([])
-      }
-    }) 
-  })
-}
-
-const get_indic = () => {
-  return new Promise(resolve => {
-    axios.get(URL + '/algo-data').then((res) => {
-   
-      if(res.data) {
-        resolve(res.data)
-      } else {
-        resolve([])
-      }
-    }) 
-  })
-}
-
 const IN_VIEW = 70
+
+const change_tf = (bars, tf) => {
+  let bar_count = 0;
+  let new_bars = [];
+
+  let open = 0, volume = 0, high = 0, low = 100000000;
+  bars.forEach((bar) => {
+    // Sum volume
+    volume += bar.volume;
+
+    if(high < bar.high) { high = bar.high }
+    if(low > bar.low) { low = bar.low }
+
+    // Grab open of first bar
+    if(open == 0) {
+      open = bar.open;
+    }
+
+    if(bar_count % tf == 0) {
+      new_bars.push({
+        open: open,
+        close: bar.close,
+        high: high,
+        low: low
+      })
+
+      // Reset
+      open = 0;
+      volume = 0;
+      high = 0;
+      low = 1000000000;
+    }
+
+    bar_count++;
+  })
+
+  return new_bars;
+}
 
 function App() {
   const canvasRef = useRef(null)
   const [algo_data, setAlgo] = useState(null);
   const [total_prof, setTPROF] = useState(0);
   const [avgTrade, setAvgTrade] = useState(0)
+  const [btData, setBtData] = useState(null)
 
   const render = (ctx, canvas, chart_data, algo_data) => {
     // Bg
@@ -54,7 +69,8 @@ function App() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // DRAW BARS
-    let bars = chart_data.kline;
+    //let bars = change_tf(chart_data.kline, 15);
+    let bars = chart_data.kline
     if(!bars) {
       return;
     }
@@ -63,7 +79,7 @@ function App() {
     const chart_width = 800;
 
     // Render main chart
-    const scale = 3000;
+    const scale = 300;
     const offset = 200;
 
     for(let i = bars.length-1; i >= 0; i--) {
@@ -89,6 +105,24 @@ function App() {
       
       ctx.fillRect(x, y, 4, bar_height);
       ctx.fillRect(x+1.5, hl_norm * -scale + offset, 1, hl_height);
+      
+      if(btData) {
+        let backtest = btData[0];
+        let res = backtest[i].res;
+        console.log('backtest')
+
+        if(res && res == 'sell') {
+          ctx.font = "16px serif";
+          ctx.fillStyle = '#aaa'
+          ctx.fillText('🔴', x-10, y +-100);
+          //ctx.fillRect(x, y - 1000, 2, 10000);
+        } else if (res && res == 'buy') {
+          ctx.font = "16px serif";
+          ctx.fillStyle = '#aaa'
+          ctx.fillText('🟢', x-10, y + 100);
+        }
+      }
+     
 
       if(algo_data) {
         algo_data.trades.forEach((tr) => {
@@ -151,18 +185,31 @@ function App() {
     return trades.slice(1, trades.length-1)
   }
 
+  
+
+
   useEffect(() => {
-    // kline charts
-    //kchart.current = init('real-time-k-line');
-
-
     // My chart
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
+    socket.on('tick', (data) => {
+      // Got price data
+      render(ctx, canvas, data, null)
+      //console.log(data)
+    })
+
+    socket.on('backtest_finished', (data) => {
+      setBtData(data)
+      render(ctx, canvas, data, null)
+    })
+
     setInterval(async () => {
+      
+      /*
       let chart_data = await get_data();
       let algo_data = await get_indic();
+      
       
       let cstats = compute_stats(chart_data, algo_data)
 
@@ -182,8 +229,13 @@ function App() {
       //kchart.current.applyNewData(chart_data.kline)
       //compute_stats(chart_data, algo_data)
       render(ctx, canvas, chart_data, algo_data)
-     
+     */
+ 
     }, 500)
+    setTimeout(() => {
+      socket.emit('backtest')
+    }, 500)
+    
   }, [])
 
   return (
@@ -203,7 +255,7 @@ function App() {
             </div>
 
             <div className='stat-header'>
-              <h5 style={{margin: '5px'}} id="">{algo_data ? algo_data.length : ''} / 5 IBA</h5>
+              <h5 style={{margin: '5px'}} id="">{btData ? btData[0].filter(x => x.res != null).length : ''} / 5 IBA</h5>
               <h6 style={{margin: '5px', color: '#ddd'}}>TRADES</h6>
             </div>
           </div>
