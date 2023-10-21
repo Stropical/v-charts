@@ -57,10 +57,18 @@ function App() {
   const [algo_data, setAlgo] = useState(null);
   const [total_prof, setTPROF] = useState(0);
   const [avgTrade, setAvgTrade] = useState(0)
-  const [btData, setBtData] = useState(null)
+  
+  let chartData = null;
+  let btData = null;
 
-  const render = (ctx, canvas, chart_data, algo_data) => {
+  const render = (ctx, canvas) => {
     // Bg
+    if(!chartData) {
+      console.log('No chart data')
+      socket.emit('req_data')
+      return;
+    }
+
     const grd = ctx.createLinearGradient(0, 0, 0, 800);
     grd.addColorStop(0, "#141515");
     grd.addColorStop(1, "#141515");
@@ -70,7 +78,7 @@ function App() {
 
     // DRAW BARS
     //let bars = change_tf(chart_data.kline, 15);
-    let bars = chart_data.kline
+    let bars = chartData.kline
     if(!bars) {
       return;
     }
@@ -106,7 +114,7 @@ function App() {
       ctx.fillRect(x, y, 4, bar_height);
       ctx.fillRect(x+1.5, hl_norm * -scale + offset, 1, hl_height);
       
-      if(btData) {
+      /*if(btData) {
         let backtest = btData[0];
         let res = backtest[i].res;
         console.log('backtest')
@@ -121,21 +129,50 @@ function App() {
           ctx.fillStyle = '#aaa'
           ctx.fillText('🟢', x-10, y + 100);
         }
-      }
-     
-
-      if(algo_data) {
-        algo_data.trades.forEach((tr) => {
-          if(tr.index == i) {
-            ctx.fillRect(x+1.5, hl_norm * -scale + offset, 100, 100);
-          }      
-        })
-      }
-      //console.log(x > 0 ? x : '')
-      // Indicator
+      }*/
     }
 
-    ctx.strokeStyle = "#f00"
+    let sum_indicators = [[]];
+    // Sum indicators
+    if(btData && bars && btData.length > 0) {
+      btData.forEach((btPoint) => {
+        let res = btPoint.res
+        if(res) {
+          res.indicators.forEach((indic, i) => {
+            sum_indicators[i].push(indic)
+          })
+        }
+      })
+    }
+
+    console.log(sum_indicators)
+    sum_indicators.forEach((indic, i) => {
+        switch(i) {
+          case i == 0: ctx.strokeStyle = "#f00"; break;
+          case i == 1: ctx.strokeStyle = "#0f0"; break;
+          case i == 2: ctx.strokeStyle = "#00f"; break;
+        }
+        
+        ctx.lineWidth = 1;
+        ctx.beginPath(); // Start a new path
+
+        console.log(indic)
+
+        for(let i = indic.length-1; i >= 0; i--) {
+            let x = (bars.length - i) * -5 + (chart_width*4/5)
+            let y = (indic[i].value - bars[bars.length-1].open) * -scale + offset;
+
+            if(i % 100 == 0) {
+              //console.log(x, y)
+            }
+
+            ctx.lineTo(x, y);
+            //ctx.moveTo(x, y);
+
+        }
+        ctx.stroke();
+      });
+    
     /*
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -163,7 +200,6 @@ function App() {
     ctx.stroke()*/
   }
 
-  const kchart = useRef();
 
   const compute_stats = (chart_data, algo_data) => {
     let trades = [];
@@ -185,9 +221,6 @@ function App() {
     return trades.slice(1, trades.length-1)
   }
 
-  
-
-
   useEffect(() => {
     // My chart
     const canvas = canvasRef.current
@@ -195,13 +228,13 @@ function App() {
 
     socket.on('tick', (data) => {
       // Got price data
-      render(ctx, canvas, data, null)
-      //console.log(data)
+      chartData = data;
+      render(ctx, canvas)
     })
 
     socket.on('backtest_finished', (data) => {
-      setBtData(data)
-      render(ctx, canvas, data, null)
+      btData = data;
+      render(ctx, canvas)
     })
 
     setInterval(async () => {
@@ -232,9 +265,9 @@ function App() {
      */
  
     }, 500)
-    setTimeout(() => {
+    setInterval(() => {
       socket.emit('backtest')
-    }, 500)
+    }, 5000)
     
   }, [])
 
@@ -255,7 +288,7 @@ function App() {
             </div>
 
             <div className='stat-header'>
-              <h5 style={{margin: '5px'}} id="">{btData ? btData[0].filter(x => x.res != null).length : ''} / 5 IBA</h5>
+              <h5 style={{margin: '5px'}} id="">{10} / 5 IBA</h5>
               <h6 style={{margin: '5px', color: '#ddd'}}>TRADES</h6>
             </div>
           </div>
