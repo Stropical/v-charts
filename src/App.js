@@ -91,6 +91,8 @@ function App() {
     const offset = 200;
 
     for(let i = bars.length-1; i >= 0; i--) {
+     
+
       ctx.shadowColor="black";
       ctx.shadowBlur = 0;
 
@@ -105,30 +107,17 @@ function App() {
       const hl_norm = (bars[i].low - bars[bars.length-1].open);
       
 
-      let x = (bars.length - i) * -5 + (chart_width*4/5)
+      let x = (bars.length - i) * -12 + (chart_width*4/5)
       let y = norm_val * -scale + offset;
       let bar_height = -scale * (bars[i].close - bars[i].open)+1;
       let hl_height = -scale * (bars[i].high - bars[i].low);
 
       
-      ctx.fillRect(x, y, 4, bar_height);
+      ctx.fillRect(x, y, 10, bar_height);
       ctx.fillRect(x+1.5, hl_norm * -scale + offset, 1, hl_height);
-      
-      /*if(btData) {
-        let backtest = btData[0];
-        let res = backtest[i].res;
-        console.log('backtest')
 
-        if(res && res == 'sell') {
-          ctx.font = "16px serif";
-          ctx.fillStyle = '#aaa'
-          ctx.fillText('🔴', x-10, y +-100);
-          //ctx.fillRect(x, y - 1000, 2, 10000);
-        } else if (res && res == 'buy') {
-          ctx.font = "16px serif";
-          ctx.fillStyle = '#aaa'
-          ctx.fillText('🟢', x-10, y + 100);
-        }
+      /*if(i == 0) {
+        console.log('First bars: ', x, y)
       }*/
     }
 
@@ -147,26 +136,26 @@ function App() {
 
     console.log(sum_indicators)
     sum_indicators.forEach((indic, i) => {
-        switch(i) {
-          case i == 0: ctx.strokeStyle = "#f00"; break;
-          case i == 1: ctx.strokeStyle = "#0f0"; break;
-          case i == 2: ctx.strokeStyle = "#00f"; break;
-        }
-        
+        ctx.strokeStyle = "#f00"
+
         ctx.lineWidth = 1;
         ctx.beginPath(); // Start a new path
 
         console.log(indic)
 
         for(let i = indic.length-1; i >= 0; i--) {
-            let x = (bars.length - i) * -5 + (chart_width*4/5)
+            let x = (bars.length - i) * -12 + (chart_width*4/5)
             let y = (indic[i].value - bars[bars.length-1].open) * -scale + offset;
 
-            if(i % 100 == 0) {
-              //console.log(x, y)
+            if(i == 0) {
+              console.log('First: ', x, y)
             }
 
-            ctx.lineTo(x, y);
+            if(indic[i].value > -2) {
+              console.log(indic[i].value)
+              ctx.lineTo(x, y);
+            }
+            
             //ctx.moveTo(x, y);
 
         }
