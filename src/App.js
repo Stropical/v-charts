@@ -114,7 +114,7 @@ function App() {
 
       
       ctx.fillRect(x, y, 10, bar_height);
-      ctx.fillRect(x+1.5, hl_norm * -scale + offset, 1, hl_height);
+      ctx.fillRect(x+5, hl_norm * -scale + offset, 1, hl_height);
 
       /*if(i == 0) {
         console.log('First bars: ', x, y)
@@ -137,22 +137,32 @@ function App() {
 
     console.log(sum_indicators)
     sum_indicators.forEach((indic, i) => {
-        ctx.strokeStyle = "#f00"
 
-        ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+
+      switch(i) {
+        case 0: ctx.strokeStyle = "#f00"; break;
+        case 1: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 4; break;
+        case 2: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 4; break;
+        case 3: ctx.strokeStyle = "#0ff"; ctx.lineWidth = 2; break;
+      }
+        
+
+       
         ctx.beginPath(); // Start a new path
 
         console.log(indic)
 
         for(let i = indic.length-1; i >= 0; i--) {
-            let x = (bars.length - i) * -12 + (chart_width*4/5) + (12*3) // 3 to account for skipped bars in alpha (too few to)
+            let x = (bars.length - i) * -12 + (chart_width*4/5) + (12*3) + (10/2) // 3 to account for skipped bars in alpha (too few to) || 10/2 to center line
             let y = (indic[i].value - bars[bars.length-1].open) * -scale + offset;
 
             if(i == 0) {
               console.log('First: ', x, y)
             }
 
-            if(indic[i].value > -2) {
+            if(indic[i].value != null) {
               console.log(indic[i].value)
               ctx.lineTo(x, y);
             }
