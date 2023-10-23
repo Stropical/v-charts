@@ -121,13 +121,14 @@ function App() {
       }*/
     }
 
-    let sum_indicators = [[]];
+    let sum_indicators = [];
     // Sum indicators
     if(btData && bars && btData.length > 0) {
       btData.forEach((btPoint) => {
         let res = btPoint.res
         if(res) {
           res.indicators.forEach((indic, i) => {
+            if(sum_indicators.length <= i) { sum_indicators.push([]) }
             sum_indicators[i].push(indic)
           })
         }
@@ -144,7 +145,7 @@ function App() {
         console.log(indic)
 
         for(let i = indic.length-1; i >= 0; i--) {
-            let x = (bars.length - i) * -12 + (chart_width*4/5)
+            let x = (bars.length - i) * -12 + (chart_width*4/5) + (12*3) // 3 to account for skipped bars in alpha (too few to)
             let y = (indic[i].value - bars[bars.length-1].open) * -scale + offset;
 
             if(i == 0) {
