@@ -14,43 +14,7 @@ const H2 = "#e67c7c"
 
 const IN_VIEW = 70
 
-const change_tf = (bars, tf) => {
-  let bar_count = 0;
-  let new_bars = [];
 
-  let open = 0, volume = 0, high = 0, low = 100000000;
-  bars.forEach((bar) => {
-    // Sum volume
-    volume += bar.volume;
-
-    if(high < bar.high) { high = bar.high }
-    if(low > bar.low) { low = bar.low }
-
-    // Grab open of first bar
-    if(open == 0) {
-      open = bar.open;
-    }
-
-    if(bar_count % tf == 0) {
-      new_bars.push({
-        open: open,
-        close: bar.close,
-        high: high,
-        low: low
-      })
-
-      // Reset
-      open = 0;
-      volume = 0;
-      high = 0;
-      low = 1000000000;
-    }
-
-    bar_count++;
-  })
-
-  return new_bars;
-}
 
 function App() {
   const canvasRef = useRef(null)
@@ -84,11 +48,12 @@ function App() {
     }
 
     const chart_height = 400;
-    const chart_width = 800;
+    const chart_width = 1500;
 
     // Render main chart
     const scale = 300;
     const offset = 200;
+    const RENDER_BAR_WIDTH = 6;
 
     for(let i = bars.length-1; i >= 0; i--) {
      
@@ -107,14 +72,14 @@ function App() {
       const hl_norm = (bars[i].low - bars[bars.length-1].open);
       
 
-      let x = (bars.length - i) * -12 + (chart_width*4/5)
+      let x = (bars.length - i) * -RENDER_BAR_WIDTH + (chart_width*4/5)
       let y = norm_val * -scale + offset;
       let bar_height = -scale * (bars[i].close - bars[i].open)+1;
       let hl_height = -scale * (bars[i].high - bars[i].low);
 
       
-      ctx.fillRect(x, y, 10, bar_height);
-      ctx.fillRect(x+5, hl_norm * -scale + offset, 1, hl_height);
+      ctx.fillRect(x, y, RENDER_BAR_WIDTH-2, bar_height);
+      ctx.fillRect(x+(RENDER_BAR_WIDTH/2), hl_norm * -scale + offset, 1, hl_height);
 
       /*if(i == 0) {
         console.log('First bars: ', x, y)
@@ -152,10 +117,11 @@ function App() {
        
         ctx.beginPath(); // Start a new path
 
-        console.log(indic)
+        const ALT_TF = 20;
+        const SKIPPED_BARS = 3;
 
         for(let i = indic.length-1; i >= 0; i--) {
-            let x = (bars.length - i) * -12 + (chart_width*4/5) + (12*3) + (10/2) // 3 to account for skipped bars in alpha (too few to) || 10/2 to center line
+            let x = (bars.length - i) * -RENDER_BAR_WIDTH + (chart_width*4/5) + (ALT_TF*RENDER_BAR_WIDTH*SKIPPED_BARS) + (RENDER_BAR_WIDTH/2) // 3 to account for skipped bars in alpha (too few to) || 10/2 to center line
             let y = (indic[i].value - bars[bars.length-1].open) * -scale + offset;
 
             if(i == 0) {
@@ -172,34 +138,7 @@ function App() {
         }
         ctx.stroke();
       });
-    
-    /*
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    const zigzag = algo_data.indicators[0].values
-    //console.log(zigzag.slice(0, 10))
-
-    // Iterate backwards on bars
-    for(let i = zigzag.length-1; i >= 0; i--) {
-      if(zigzag[i] && i*20 < bars.length) {
-        let x = (zigzag.length - i) * -5 * (20) + (chart_width*4/5)
-        let y = (19 - bars[i*20].close) * -scale + offset;
-
-        //console.log(x, y)
-        if(x > 0) {
-         
-        } else {
-          //console.log(x)
-        }
-  
-        ctx.lineTo(x, y)
-      }
-
-
-    }
-    ctx.stroke()*/
   }
-
 
   const compute_stats = (chart_data, algo_data) => {
     let trades = [];
@@ -237,34 +176,6 @@ function App() {
       render(ctx, canvas)
     })
 
-    setInterval(async () => {
-      
-      /*
-      let chart_data = await get_data();
-      let algo_data = await get_indic();
-      
-      
-      let cstats = compute_stats(chart_data, algo_data)
-
-      let temp_total_prof = 0;
-      cstats.forEach((tr) => {
-        temp_total_prof += tr.profit
-      })
-
-      setAvgTrade(temp_total_prof / cstats.length)
-      setTPROF(temp_total_prof)
-      setAlgo(cstats)
-
-      //console.log(algo_data)
-
-      //console.log(chart_data.kline[chart_data.kline.length-1].close)
-
-      //kchart.current.applyNewData(chart_data.kline)
-      //compute_stats(chart_data, algo_data)
-      render(ctx, canvas, chart_data, algo_data)
-     */
- 
-    }, 500)
     setInterval(() => {
       socket.emit('backtest')
     }, 5000)
@@ -274,7 +185,7 @@ function App() {
   return (
     <div className="app">
       <div className='app-cont'>
-        <canvas width="800" height="600" ref={canvasRef}/>
+        <canvas width="1500" height="600" ref={canvasRef}/>
         <div className='stats-pane'>
           <div className='stat-headers'>
             <div className='stat-header'>
