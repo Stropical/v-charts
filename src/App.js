@@ -50,7 +50,7 @@ function App() {
 
     // Render main chart
     const scale = 300;
-    const offset = 400;
+    const offset = 300;
     const RENDER_BAR_WIDTH = 6;
 
     for (let i = bars.length - 1; i >= 0; i--) {
@@ -92,8 +92,8 @@ function App() {
       })
     }
 
-    const ALT_TF = 3;
-    const SKIPPED_BARS = 3;
+    const ALT_TF = 5;
+    const SKIPPED_BARS = 1;
 
     console.log(sum_indicators)
     sum_indicators.forEach((indic, i) => {  
