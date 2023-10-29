@@ -93,9 +93,9 @@ function App() {
     }
 
     const ALT_TF = 5;
-    const SKIPPED_BARS = 1;
+    const SKIPPED_BARS = 4;
 
-    console.log(sum_indicators)
+    //console.log(sum_indicators)
     sum_indicators.forEach((indic, i) => {  
       ctx.lineWidth = 1;
       ctx.lineCap = "round";
@@ -116,11 +116,11 @@ function App() {
         let y = (indic[i].value - bars[bars.length - 1].open) * -scale + offset;
 
         if (i == 0) {
-          console.log('First: ', x, y)
+          //console.log('First: ', x, y)
         }
 
         if (indic[i].value != null) {
-          console.log(indic[i].value)
+          //console.log(indic[i].value)
           ctx.lineTo(x, y);
         }
 
@@ -142,6 +142,18 @@ function App() {
       }
     }
     
+    let trades = [];
+    if(btData) {
+      btData.forEach((point) => {
+        let trade = point.res.trade;
+        if(trade) {
+          trades.push({ direction: trade.direction, size: 1, profit: 0 })
+        }
+      })
+  
+      setAlgo(trades)
+    }
+    
   }
 
   const compute_stats = (chart_data, algo_data) => {
@@ -151,7 +163,7 @@ function App() {
       algo_data.trades.forEach((e, i) => {
         if (e.type == 'entry') {
           open_price = chart_data.kline[i].open;
-          open_dir = e.direction
+          open_dir = e.res.trade
         } else {
           let delta = open_dir == 'long' ? chart_data.kline[i].close / open_price : open_price / chart_data.kline[i].close
           let profit = e.size * (delta - 1);
@@ -177,6 +189,7 @@ function App() {
 
     socket.on('backtest_finished', (data) => {
       btData = data;
+      console.log(btData)
       render(ctx, canvas)
     })
 
