@@ -57,11 +57,7 @@ function App() {
       ctx.shadowColor = "black";
       ctx.shadowBlur = 0;
 
-      if (bars[i].open > bars[i].close) {
-        ctx.fillStyle = "#f04a4a";
-      } else {
-        ctx.fillStyle = "#56eb49";
-      }
+      
 
       // Y coord
       const norm_val = (bars[i].open - bars[bars.length - 1].open);
@@ -72,6 +68,29 @@ function App() {
       let y = norm_val * -scale + offset;
       let bar_height = -scale * (bars[i].close - bars[i].open) + 1;
       let hl_height = -scale * (bars[i].high - bars[i].low);
+
+      if(btData && btData[i] && btData[i].res.trade) {
+        console.log(btData[i].res.trade)
+        if(btData[i].res.trade.direction == 'long') {
+          ctx.fillStyle = "#56eb49";
+          ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
+          ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
+        } else if(btData[i].res.trade.direction == 'short') {
+          ctx.fillStyle = "#f04a4a";
+          ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
+          ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
+        } else {
+
+        }
+        
+      }
+
+      // Color for bars
+      if (bars[i].open > bars[i].close) {
+        ctx.fillStyle = "#f04a4a";
+      } else {
+        ctx.fillStyle = "#56eb49";
+      }
 
 
       ctx.fillRect(x, y, RENDER_BAR_WIDTH - 2, bar_height);
@@ -146,10 +165,13 @@ function App() {
     if(btData) {
       btData.forEach((point) => {
         let trade = point.res.trade;
+        if(trade) { console.log(trade)}
         if(trade) {
           trades.push({ direction: trade.direction, size: 1, profit: 0 })
         }
       })
+
+     
   
       setAlgo(trades)
     }
