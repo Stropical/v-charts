@@ -79,8 +79,10 @@ function App() {
           ctx.fillStyle = "#f04a4a";
           ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
           ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
-        } else {
-
+        } else if(btData[i].res.trade.direction == 'close') {
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
+          ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
         }
         
       }
