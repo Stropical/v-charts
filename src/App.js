@@ -70,7 +70,7 @@ function App() {
       let hl_height = -scale * (bars[i].high - bars[i].low);
 
       if(btData && btData[i] && btData[i].res.trade) {
-        console.log(btData[i].res.trade)
+        //console.log(btData[i].res.trade)
         if(btData[i].res.trade.direction == 'long') {
           ctx.fillStyle = "#56eb49";
           ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
@@ -79,8 +79,12 @@ function App() {
           ctx.fillStyle = "#f04a4a";
           ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
           ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
-        } else if(btData[i].res.trade.direction == 'close') {
-          ctx.fillStyle = "#fff";
+        } else if(btData[i].res.trade.direction == 'sell_close') {
+          ctx.fillStyle = "#faa";
+          ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
+          ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
+        } else if(btData[i].res.trade.direction == 'buy_close') {
+          ctx.fillStyle = "#ffa";
           ctx.fillRect(x, y+100, RENDER_BAR_WIDTH - 2, 5);
           ctx.fillRect(x, y-100, RENDER_BAR_WIDTH - 2, 5);
         }
@@ -96,7 +100,7 @@ function App() {
 
 
       ctx.fillRect(x, y, RENDER_BAR_WIDTH - 2, bar_height);
-      ctx.fillRect(x + (RENDER_BAR_WIDTH / 2), hl_norm * -scale + offset, 1, hl_height);
+      ctx.fillRect(x + (RENDER_BAR_WIDTH / 2)-2, hl_norm * -scale + offset, 1, hl_height);
     }
 
     let sum_indicators = [];
@@ -113,28 +117,39 @@ function App() {
       })
     }
 
-    const ALT_TF = 5;
-    const SKIPPED_BARS = 4;
+    const ALT_TF = 7;
 
-    //console.log(sum_indicators)
-    sum_indicators.forEach((indic, i) => {  
+    const SKIPPED_BARS = (8 * 14.33) + (bars.length % ALT_TF)
+
+    //console.log(SKIPPED_BARS, btData, btData ? btData.offset : 0)
+    sum_indicators.forEach((indic, si) => {  
       ctx.lineWidth = 1;
       ctx.lineCap = "round";
 
-      switch (i) {
-        case 0: ctx.strokeStyle = "#f00"; break;
-        case 1: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 2; break;
-        case 2: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 2; break;
-        case 3: ctx.strokeStyle = "#0ff"; ctx.lineWidth = 1; break;
-      }
-
       ctx.beginPath(); // Start a new path
 
-    
-
       for (let i = indic.length - 1; i >= 0; i--) {
-        let x = (bars.length - i) * -RENDER_BAR_WIDTH + (chart_width * 4 / 5) + (ALT_TF * RENDER_BAR_WIDTH * SKIPPED_BARS) + (RENDER_BAR_WIDTH / 2) // 3 to account for skipped bars in alpha (too few to) || 10/2 to center line
+       
+
+        let x = (bars.length - i) * -RENDER_BAR_WIDTH + (chart_width * 4 / 5) + (ALT_TF * RENDER_BAR_WIDTH + SKIPPED_BARS) + (RENDER_BAR_WIDTH / 2) // 3 to account for skipped bars in alpha (too few to) || 10/2 to center line
         let y = (indic[i].value - bars[bars.length - 1].open) * -scale + offset;
+
+        switch (si) {
+          case 0:
+            ctx.globalAlpha = 0.02; 
+            if(indic[i].value < bars[i].close) {
+              //console.log(indic[i].value, bars[i].close)
+              ctx.fillStyle = "#0f0";
+              ctx.fillRect(x, 0, 6, 1000)
+            } else {
+              ctx.fillStyle = "#f00";
+              ctx.fillRect(x, 0, 6, 1000)
+            }
+            break;
+          case 1: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 3; ctx.globalAlpha = 0.1; break;
+          case 2: ctx.strokeStyle = "#3266a8"; ctx.lineWidth = 3; ctx.globalAlpha = 0.1; break;
+          case 3: ctx.strokeStyle = "#0ff"; ctx.lineWidth = 1; ctx.globalAlpha = 1; break;
+        }
 
         if (i == 0) {
           //console.log('First: ', x, y)
@@ -143,6 +158,7 @@ function App() {
         if (indic[i].value != null) {
           //console.log(indic[i].value)
           ctx.lineTo(x, y);
+          //ctx.stroke();
         }
 
         //ctx.moveTo(x, y);
@@ -167,7 +183,8 @@ function App() {
     if(btData) {
       btData.forEach((point) => {
         let trade = point.res.trade;
-        if(trade) { console.log(trade)}
+        if(trade) { //console.log(trade)
+        }
         if(trade) {
           trades.push({ direction: trade.direction, size: 1, profit: 0 })
         }
@@ -213,7 +230,7 @@ function App() {
 
     socket.on('backtest_finished', (data) => {
       btData = data;
-      console.log(btData)
+      //console.log(btData)
       render(ctx, canvas)
     })
 
@@ -226,7 +243,7 @@ function App() {
   return (
     <div className="app">
       <div className='app-cont'>
-        <canvas width="1500" height="600" ref={canvasRef} />
+        <canvas width="1250" height="600" ref={canvasRef} />
         <div className='stats-pane'>
           <div className='stat-headers'>
             <div className='stat-header'>
